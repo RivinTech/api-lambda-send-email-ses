@@ -19,6 +19,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: nodejs22.x
+      MemorySize: 128
       Environment:
         Variables:
           FROM_EMAIL: !Ref FromEmail
