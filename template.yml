@@ -13,6 +13,11 @@ Parameters:
     Default: ''
     Description: (Optional) Cross-origin resource sharing (CORS) Origin. You can specify a single origin, all "*" or leave empty and no CORS will be applied.
     MaxLength: 250
+  DebugLogging:
+    Type: String
+    Default: 'false'
+    Description: true or false, log the entire incoming HTTP request to CloudWatch
+    MaxLength: 6
 Resources:
   LambdaEmailer:
     Type: AWS::Serverless::Function
@@ -24,6 +29,7 @@ Resources:
         Variables:
           FROM_EMAIL: !Ref FromEmail
           CORS_ORIGIN: !Ref CorsOrigin
+          DEBUG_LOGGING: !Ref DebugLogging
       Policies:
         - SESCrudPolicy:
             IdentityName: !Ref FromEmail

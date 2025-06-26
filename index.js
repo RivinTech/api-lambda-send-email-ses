@@ -7,6 +7,10 @@ const FROM_EMAIL = process.env.FROM_EMAIL;
 const ses = new SESClient({});
 
 export const handler = async (event) => {
+
+  if (process.env.DEBUG_LOGGING == "true")
+    console.log(event);
+
   if (event.httpMethod === 'OPTIONS') {
     return processResponse(true);
   }

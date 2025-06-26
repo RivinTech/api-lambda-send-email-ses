@@ -1,4 +1,4 @@
-module.exports = (isCors, body, statusCode) => {
+export const processResponse = (isCors, body, statusCode) => {
   const status = statusCode || (body ? 200 : 204);
   const headers = { 'Content-Type': 'application/json' };
   if (isCors) {
@@ -15,3 +15,5 @@ module.exports = (isCors, body, statusCode) => {
     headers: headers
   };
 };
+
+export default processResponse;
