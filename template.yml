@@ -13,14 +13,12 @@ Parameters:
     Default: ''
     Description: (Optional) Cross-origin resource sharing (CORS) Origin. You can specify a single origin, all "*" or leave empty and no CORS will be applied.
     MaxLength: 250
-Conditions:
-  IsCorsDefined: !Not [!Equals [!Ref CorsOrigin, '']]
 Resources:
   LambdaEmailer:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: nodejs12.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
           FROM_EMAIL: !Ref FromEmail

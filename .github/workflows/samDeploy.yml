@@ -1,0 +1,47 @@
+# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: AWS SAM Deploy
+
+on:
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# override defaults from github variables
+env:
+  NODE_VERSION: ${{ vars.NODE_VERSION || '22.x' }}
+  # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  STACK_NAME: ${{ vars.STACK_NAME || 'lambda-send-email' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'    
+        
+    - name: Setup AWS SAM CLI  
+      uses: aws-actions/setup-sam@v2  
+      
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    # same as npm install
+    - run: npm ci
+    
+    - run: sam build
+    
+    - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ env.S3_BUCKET }} --region ${{ env.AWS_REGION }}

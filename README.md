@@ -16,6 +16,14 @@ This is a serverless component consisting of:
 
 It's a Nuts & Bolts application component for AWS Serverless Application Repository.
 
+## Github Action Parameters
+
+To deploy to AWS from a github action, override the default values using repository variables.
+  - `NODE_VERSION`, default 22.x. See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+  - `AWS-REGION`, default us-east-1
+  - `STACK-NAME`, default lambda-send-email
+  - `S3-BUCKET`, create a bucket and set this name to match
+
 ## Deployment Parameters
 
 This component has two CloudFormation deployment parameters:
@@ -23,13 +31,11 @@ This component has two CloudFormation deployment parameters:
 - `FromEmail`, a required parameter, represents the email sender. Must be a SES verified email. If you attempt to send email using a non-verified address or domain, the operation results in an "Email address not verified" error.
 - `CorsOrigin`, an optional parameter, where you can restrict access to only specified domains.
 
-## Latest Release - 1.1.0
+## Release - 1.1.0
 
  - Upgrade to Node.js 12.x LTS
 
-## Roadmap - Upcoming changes
+## Fork and Release - 2.0.0
 
-Here are the upcoming changes that I'll add to this serverless component:
+ - Upgrade to Node.js 22.x
 
-- ESLint
-- Tests

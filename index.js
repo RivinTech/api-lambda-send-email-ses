@@ -1,34 +1,55 @@
-const AWS = require('aws-sdk'),
-  SES = new AWS.SES(),
-  processResponse = require('./process-response.js'),
-  FROM_EMAIL = process.env.FROM_EMAIL,
-  UTF8CHARSET = 'UTF-8';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import processResponse from './process-response.js';
 
-exports.handler = async event => {
+const UTF8CHARSET = 'UTF-8';
+const FROM_EMAIL = process.env.FROM_EMAIL;
+
+const ses = new SESClient({});
+
+export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return processResponse(true);
   }
 
-  if (!event.body) {
-    return processResponse(true, 'Please specify email parameters: toEmails, subject, and message ', 400);
+  let origin = null;
+  if (event.headers.origin)
+    origin = event.headers.origin;
+  else if (event.headers.Origin)
+    origin = event.headers.Origin;
+    
+  console.log(origin);
+  
+  if (process.env.CORS_ORIGIN != '*' && (!origin || origin !== process.env.CORS_ORIGIN)) {
+    return processResponse(false, 'Invalid', 401);
   }
-  const emailData = JSON.parse(event.body);
 
-  if (!emailData.toEmails || !Array.isArray(emailData.toEmails) || !emailData.subject || !emailData.message) {
+  if (!event.body) {
+    return processResponse(true, 'Please specify email parameters: toEmails, subject, and message', 400);
+  }
+
+  let emailData;
+  try {
+    emailData = JSON.parse(event.body);
+  } catch {
+    return processResponse(true, 'Invalid JSON in request body', 400);
+  }
+
+  const { toEmails, ccEmails, bccEmails, subject, message, replyToEmails } = emailData;
+
+  if (!Array.isArray(toEmails) || !subject || !message) {
     return processResponse(true, 'Please specify email parameters: toEmails, subject and message', 400);
   }
 
   const destination = {
-    ToAddresses: emailData.toEmails
-  }
+    ToAddresses: toEmails,
+    ...(ccEmails?.length ? { CcAddresses: ccEmails } : {}),
+    ...(bccEmails?.length ? { BccAddresses: bccEmails } : {})
+  };
 
-  if (emailData.ccEmails) {
-    destination.CcAddresses = emailData.ccEmails;
-  }
-
-  const body = (emailData.message && isHTML(emailData.message)) ?
-    { Html: { Charset: UTF8CHARSET, Data: emailData.message } } :
-    { Text: { Charset: UTF8CHARSET, Data: emailData.message } };
+  const isHtml = isHTML(message);
+  const body = isHtml
+    ? { Html: { Charset: UTF8CHARSET, Data: message } }
+    : { Text: { Charset: UTF8CHARSET, Data: message } };
 
   const emailParams = {
     Destination: destination,
@@ -36,28 +57,30 @@ exports.handler = async event => {
       Body: body,
       Subject: {
         Charset: UTF8CHARSET,
-        Data: emailData.subject
+        Data: subject
       }
     },
-    Source: FROM_EMAIL
+    Source: FROM_EMAIL,
+    ...(replyToEmails?.length ? { ReplyToAddresses: replyToEmails } : {})
   };
 
-  if (emailData.replyToEmails && Array.isArray(emailData.replyToEmails)) {
-    emailParams.ReplyToAddresses = emailData.replyToEmails;
-  }
-
   try {
-    await SES.sendEmail(emailParams).promise();
+    console.log("sending '" + subject + "' to " + toEmails);
+
+    await ses.send(new SendEmailCommand(emailParams));
     return processResponse(true);
   } catch (err) {
-    console.error(err, err.stack);
-    const errorResponse = `Error: Execution update, caused a SES error, please look at your logs.`;
-    return processResponse(true, errorResponse, 500);
+    console.error('SES error:', err);
+    return processResponse(true, 'Error sending email. Check logs for details.', 500);
   }
 };
 
 function isHTML(value) {
-  value = value.trim();
-  return value.startsWith('<') && value.endsWith('>') &&
-    (value.includes('<body') || value.includes('<div') || value.includes('<s') || value.includes('<h') || value.includes('<p'));
+  const trimmed = value.trim();
+  return (
+    trimmed.startsWith('<') &&
+    trimmed.endsWith('>') &&
+    /<(body|div|s|h[1-6]|p)/i.test(trimmed)
+  );
 }
+

@@ -1,8 +1,10 @@
 {
   "name": "api-lambda-send-email-ses",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "",
+  "private": true,
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "package": "aws cloudformation package --template-file template.yml --output-template-file output.yml --s3-bucket app-repo-components",
     "deploy": "aws cloudformation deploy --template-file output.yml --stack-name api-lambda-send-email-ses --capabilities CAPABILITY_IAM",
@@ -11,5 +13,11 @@
   },
   "keywords": [],
   "author": "Aleksandar Simovic <alexander.simovic@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.826.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }
